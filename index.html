@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RegulaPro - Projetos e Engenharia</title>
+    <!-- Tailwind CSS para estilização rápida e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para os gráficos do Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .toast {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        /* Customização da barra de rolagem para um visual mais limpo */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+    </style>
+</head>
+<body class="bg-slate-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <!-- ================================================== -->
+    <!-- TELA DE LOGIN SEGURO                               -->
+    <!-- ================================================== -->
+    <div id="view-login" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-96 text-center">
+            <div class="text-4xl mb-4">🔒</div>
+            <h1 class="text-2xl font-bold mb-2">RegulaPro Enterprise</h1>
+            <p class="text-gray-500 mb-6 text-sm">Acesso restrito. Insira suas credenciais.</p>
+            <input type="email" id="email-input" class="w-full border-2 border-slate-200 p-3 rounded mb-3 text-center focus:border-blue-500 outline-none" placeholder="E-mail Corporativo">
+            <input type="password" id="password-input" class="w-full border-2 border-slate-200 p-3 rounded mb-4 text-center focus:border-blue-500 outline-none" placeholder="Senha" onkeypress="if(event.key === 'Enter') window.loginAuth()">
+            <button id="btn-login" onclick="window.loginAuth()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded transition flex justify-center items-center gap-2">Entrar no Sistema</button>
+            <p id="login-error" class="text-red-500 text-xs font-bold mt-3 hidden"></p>
+        </div>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- NAVBAR (BARRA DE NAVEGAÇÃO TOPO)                   -->
+    <!-- ================================================== -->
+    <nav id="app-navbar" class="bg-slate-800 text-white p-4 shadow-md flex justify-between items-center hidden sticky top-0 z-40">
+        <div class="text-xl font-bold flex items-center gap-2">
+            <span>🏢</span> RegulaPro <span class="text-[10px] bg-emerald-500 text-slate-900 px-2 py-1 rounded ml-2 font-black uppercase tracking-wider">Cloud Sync</span>
+        </div>
+        <div class="space-x-1 md:space-x-4 flex items-center">
+            <button onclick="window.navigate('dashboard')" class="hover:text-blue-300 transition text-sm md:text-base font-medium">📊 Dashboard</button>
+            <button onclick="window.navigate('projetos')" class="hover:text-blue-300 transition text-sm md:text-base font-medium">📂 Projetos</button>
+            <div class="border-l border-slate-600 h-6 mx-2"></div>
+            <span id="user-display" class="text-sm text-slate-300 font-bold"></span>
+            <button onclick="window.logoutAuth()" class="text-xs bg-slate-700 hover:bg-red-600 px-3 py-1.5 rounded transition ml-2 font-bold">Sair</button>
+        </div>
+    </nav>
+
+    <!-- ÁREA ONDE APARECEM OS AVISOS VERDES/VERMELHOS -->
+    <div id="notification-area" class="fixed top-20 right-4 w-80 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ================================================== -->
+    <!-- MODAL POPUP: CRIAR / EDITAR PROJETO                -->
+    <!-- ================================================== -->
+    <div id="modal-novo-projeto" class="fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center z-50 hidden pointer-events-auto">
+        <div class="bg-white w-full max-w-5xl rounded-lg shadow-2xl flex flex-col max-h-[95vh]">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-lg">
+                <h2 id="modal-titulo" class="text-xl font-bold text-slate-800">➕ Cadastrar Novo Projeto</h2>
+                <button onclick="window.fecharModalProjeto()" class="text-slate-400 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <!-- DADOS GERAIS DO PROJETO -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded border border-slate-200">
+                    <div class="col-span-1 md:col-span-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Nome do Empreendimento/Cliente *</label>
+                        <input type="text" id="novo-proj-nome" class="w-full border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Tipo de Processo * (Gera Template)</label>
+                        <select id="novo-proj-tipo" onchange="window.verificarTemplate()" class="w-full border border-slate-300 p-2 rounded outline-none bg-white focus:ring-2 focus:ring-blue-500">
+                            <option value="Personalizado">Personalizado (Em branco)</option>
+                            <option value="Comercial Completo (Templo/Religioso)">Comercial Completo (Templo/Religioso) - 14 Etapas</option>
+                            <option value="AVCB / CLCB">AVCB / CLCB</option>
+                            <option value="Alvará de Funcionamento">Alvará de Funcionamento</option>
+                            <option value="Habite-se">Habite-se</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Órgão / Categoria *</label>
+                        <select id="novo-proj-jurisdicao" class="w-full border border-slate-300 p-2 rounded outline-none bg-white focus:ring-2 focus:ring-blue-500">
+                            <option value="Municipal">Municipal</option>
+                            <option value="Estadual">Estadual</option>
+                            <option value="Federal">Federal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">CNAE Principal</label>
+                        <input type="text" id="novo-proj-cnae" class="w-full border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- LINHAS DE ETAPAS -->
+                <div class="border-t pt-4 mt-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-slate-700">Fluxograma de Etapas, Prazos e Responsáveis</h3>
+                        <button onclick="window.adicionarCampoEtapa()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3 py-2 rounded transition font-bold">+ Adicionar Etapa Manual</button>
+                    </div>
+                    <div id="container-etapas" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t bg-slate-50 rounded-b-lg flex justify-end gap-2">
+                <button onclick="window.fecharModalProjeto()" class="bg-white border text-slate-600 px-4 py-2 rounded font-bold">Cancelar</button>
+                <button id="modal-btn-salvar" onclick="window.salvarProjeto()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-bold shadow transition">Salvar Projeto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- CONTEÚDO PRINCIPAL (TELAS DO SISTEMA)              -->
+    <!-- ================================================== -->
+    <main id="app-main" class="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full hidden">
+
+        <!-- SESSÃO 1: DASHBOARD DE ANÁLISE -->
+        <section id="view-dashboard" class="space-y-4">
+            <h1 class="text-2xl font-bold text-slate-700 border-b pb-2">Visão Geral & Análise</h1>
+
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1 w-full"><label class="block text-xs font-bold text-slate-500 mb-1">📊 Projeto</label><select id="filtro-projeto" onchange="window.atualizarDashboard()" class="w-full border border-slate-300 p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500"><option value="TODOS">Todos os Projetos</option></select></div>
+                <div class="flex-1 w-full"><label class="block text-xs font-bold text-slate-500 mb-1">📋 Tipo Processo</label><select id="filtro-tipo" onchange="window.atualizarDashboard()" class="w-full border border-slate-300 p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500"><option value="TODOS">Todos</option><option value="Comercial Completo (Templo/Religioso)">Templo/Religioso</option><option value="AVCB / CLCB">AVCB / CLCB</option><option value="Alvará de Funcionamento">Alvará de Funcionamento</option><option value="Habite-se">Habite-se</option></select></div>
+                <div class="flex-1 w-full"><label class="block text-xs font-bold text-slate-500 mb-1">🏢 Órgão</label><select id="filtro-jurisdicao" onchange="window.atualizarDashboard()" class="w-full border border-slate-300 p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500"><option value="TODOS">Todas Categorias</option><option value="Municipal">Municipal</option><option value="Estadual">Estadual</option><option value="Federal">Federal</option></select></div>
+                <button onclick="window.limparFiltros()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2 rounded text-sm font-bold w-full md:w-auto">Limpar</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
+                <div class="bg-white border-l-4 border-blue-500 p-4 rounded shadow-sm"><h3 class="text-slate-500 font-bold text-xs uppercase" id="titulo-kpi-1">Projetos Ativos</h3><p id="kpi-projetos" class="text-3xl font-black mt-1">0</p></div>
+                <div class="bg-white border-l-4 border-red-500 p-4 rounded shadow-sm"><h3 class="text-slate-500 font-bold text-xs uppercase">Etapas Atrasadas</h3><p id="kpi-atrasos" class="text-3xl font-black mt-1 text-red-600">0</p></div>
+                <div class="bg-white border-l-4 border-yellow-500 p-4 rounded shadow-sm"><h3 class="text-slate-500 font-bold text-xs uppercase">Aguardando Terceiros</h3><p id="kpi-terceiros" class="text-3xl font-black mt-1 text-yellow-600">0</p></div>
+                <div class="bg-white border-l-4 border-green-500 p-4 rounded shadow-sm"><h3 class="text-slate-500 font-bold text-xs uppercase">Etapas Concluídas</h3><p id="kpi-concluidos" class="text-3xl font-black mt-1 text-green-600">0</p></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-4 shadow-sm rounded border border-slate-100 h-80 flex flex-col"><h3 class="mb-2 font-semibold text-slate-600 text-sm">Resumo de Status</h3><div class="flex-1 relative"><canvas id="statusChart"></canvas></div></div>
+                <div class="bg-white p-4 shadow-sm rounded border border-slate-100 h-80 flex flex-col"><h3 id="titulo-grafico-2" class="mb-2 font-semibold text-slate-600 text-sm">Distribuição</h3><div class="flex-1 relative"><canvas id="jurisdicaoChart"></canvas></div></div>
+            </div>
+        </section>
+
+        <!-- SESSÃO 2: GESTÃO OPERACIONAL (CARDS DE PROJETOS) -->
+        <section id="view-projetos" class="hidden space-y-6">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h1 class="text-2xl font-bold text-slate-700">Gestão Operacional (Workflow)</h1>
+                <button onclick="window.abrirModalProjeto()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded shadow flex items-center gap-2"><span class="text-lg leading-none">+</span> Novo Projeto</button>
+            </div>
+            <div id="projetos-container" class="space-y-6"></div>
+        </section>
+    </main>
+
+    <!-- ================================================== -->
+    <!-- SISTEMA DE LÓGICA E BANCO DE DADOS (100% GRATUITO) -->
+    <!-- ================================================== -->
+    <script type="module">
+        // IMPORTAÇÕES (Removido o Storage)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, arrayUnion, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // =========================================================================
+        // ATENÇÃO: COLE SUA CREDENCIAL FIREBASE ABAIXO!
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD28GQIumssJmweKZ3CmEBzEQjR-9JLk5Y",
+            authDomain: "app--regula-pro.firebaseapp.com",
+            projectId: "app--regula-pro",
+            storageBucket: "app--regula-pro.firebasestorage.app",
+            messagingSenderId: "267824884093",
+            appId: "1:267824884093:web:33930858965d1d64440414",
+            measurementId: "G-LF5Y0RHR9M"
+        };
+        // =========================================================================
+
+        let app, db, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch (e) { console.error("Erro Firebase", e); }
+
+        let currentUser = "";
+        let projetosGlobal = [];
+        let chartStatus = null;
+        let chartJurisdicao = null;
+        let projetoEditandoId = null;
+
+        const templateTemplo = [
+            { n: "1. Reunião de Programa de Necessidades", d: "Req. Funcionais, Escritura/Matrícula, Dados Lote, Prog. Ambientes, Fotos." },
+            { n: "2. Estudo de Viabilidade", d: "Matrícula, Consulta Plano Diretor, Topografia, Sondagem SPT, Certidões Municipais, EIV." },
+            { n: "3. Estudo Preliminar (EP)", d: "Layout s/ cotas, Volumetria, Implantação, Acessibilidade (NBR 9050), Memorial." },
+            { n: "4. Anteprojeto (AP)", d: "Plantas preliminares, Cortes, Fachadas, Estudo Acústico/Luz/Fluxo, Estrutura preliminar." },
+            { n: "5. Projeto Legal (Prefeitura)", d: "Plantas legais, Quadro de Áreas, ART/RRT Arquitetura, RG/CNPJ, Docs de Propriedade." },
+            { n: "6. Alvará de Construção", d: "Projeto Aprovado, Taxas Pagas, ART/RRT de execução de obra." },
+            { n: "7. Projetos Executivos", d: "Arquit. Executiva, Estrutural, Elétrico, Hidrossanitário, SPDA, PPCI (Todas c/ ART)." },
+            { n: "8. Aprovação do PPCI (Bombeiros)", d: "Proj. Incêndio, Memoriais de Cálculo, Rotas de Fuga, Laudo Acústico, ARTs Bombeiro." },
+            { n: "9. Planejamento e Orçamento", d: "Planilhas quant./orçam., Cronograma Físico-Financeiro, Contratos, Compras." },
+            { n: "10. Execução da Obra", d: "Alvará no canteiro, Diário de Obra, Notas Fiscais, Licença Ambiental/Entulho." },
+            { n: "11. Checklist Final (Laudos)", d: "As Built, Laudo SPDA, Gás, Aterramento, Elétrica (NBR 5410), Acessibilidade." },
+            { n: "12. AVCB - Auto de Vistoria (Bombeiros)", d: "Comprovação PPCI, ARTs Execução, Vistoria Aprovada." },
+            { n: "13. Habite-se (Prefeitura)", d: "Alvará, AVCB, Vistoria Final, Quitação de Taxas Municipais." },
+            { n: "14. Averbação no Cartório", d: "Habite-se, Alvará, Plantas Finais, Certidão Numeração, Matrícula, Requerimento." }
+        ];
+
+        window.loginAuth = async function () {
+            const e = document.getElementById('email-input').value; const p = document.getElementById('password-input').value;
+            if (!e || !p) return;
+            try { await signInWithEmailAndPassword(auth, e, p); }
+            catch (err) { document.getElementById('login-error').innerText = "❌ Credenciais inválidas."; document.getElementById('login-error').classList.remove('hidden'); }
+        }
+        window.logoutAuth = async function () { if (confirm("Desconectar?")) await signOut(auth); }
+
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user.email.split('@')[0].toUpperCase();
+                    document.getElementById('user-display').innerText = `👤 ${currentUser}`;
+                    document.getElementById('view-login').classList.add('hidden'); document.getElementById('app-navbar').classList.remove('hidden'); document.getElementById('app-main').classList.remove('hidden');
+                    window.navigate('dashboard'); iniciarEscutaSincronizada();
+                } else {
+                    document.getElementById('view-login').classList.remove('hidden'); document.getElementById('app-navbar').classList.add('hidden'); document.getElementById('app-main').classList.add('hidden');
+                }
+            });
+        }
+
+        window.navigate = function (v) {
+            document.getElementById('view-dashboard').classList.add('hidden'); document.getElementById('view-projetos').classList.add('hidden'); document.getElementById(`view-${v}`).classList.remove('hidden');
+            if (v === 'dashboard') window.atualizarDashboard(); if (v === 'projetos') window.renderizarProjetos();
+        }
+
+        function iniciarEscutaSincronizada() {
+            if (!db) return;
+            onSnapshot(collection(db, "projetos"), (snapshot) => {
+                projetosGlobal = []; snapshot.forEach((doc) => { projetosGlobal.push({ id: doc.id, ...doc.data() }); });
+                projetosGlobal.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+                const sel = document.getElementById('filtro-projeto'); const val = sel.value;
+                sel.innerHTML = '<option value="TODOS">Todos os Projetos</option>'; projetosGlobal.forEach(p => { sel.innerHTML += `<option value="${p.id}">${p.name}</option>`; }); sel.value = val || "TODOS";
+
+                if (!document.getElementById('view-projetos').classList.contains('hidden')) window.renderizarProjetos(); else window.atualizarDashboard();
+            });
+        }
+
+        window.limparFiltros = function () { document.getElementById('filtro-projeto').value = "TODOS"; document.getElementById('filtro-jurisdicao').value = "TODOS"; document.getElementById('filtro-tipo').value = "TODOS"; window.atualizarDashboard(); }
+
+        window.atualizarDashboard = function () {
+            const fP = document.getElementById('filtro-projeto').value; const fJ = document.getElementById('filtro-jurisdicao').value; const fT = document.getElementById('filtro-tipo').value;
+            let dFiltrado = projetosGlobal.filter(p => (fP === "TODOS" || p.id === fP) && (fJ === "TODOS" || p.jurisdiction === fJ) && (fT === "TODOS" || (p.processType || "Outros") === fT));
+
+            let k = { a: 0, t: 0, c: 0, tp: dFiltrado.length, te: 0 }; let sc = { "NAO_INICIADA": 0, "EM_ANDAMENTO": 0, "AGUARDANDO_TERCEIROS": 0, "PENDENCIA": 0, "CONCLUIDA": 0 }; let jc = {};
+            const hoje = new Date().toISOString().split('T')[0];
+
+            dFiltrado.forEach(p => {
+                jc[p.jurisdiction] = (jc[p.jurisdiction] || 0) + 1;
+                p.steps.forEach(s => {
+                    k.te++; if (sc[s.status] !== undefined) sc[s.status]++;
+                    if (s.status === "CONCLUIDA") k.c++; if (s.status === "AGUARDANDO_TERCEIROS") k.t++;
+                    if (s.status !== "CONCLUIDA" && s.estDate && s.estDate < hoje) k.a++;
+                });
+            });
+
+            document.getElementById('kpi-projetos').innerText = fP === "TODOS" ? k.tp : k.te; document.getElementById('kpi-atrasos').innerText = k.a; document.getElementById('kpi-terceiros').innerText = k.t; document.getElementById('kpi-concluidos').innerText = k.c;
+
+            if (chartStatus) chartStatus.destroy();
+            chartStatus = new Chart(document.getElementById('statusChart').getContext('2d'), { type: 'bar', data: { labels: ['Não Inic.', 'Andamento', 'Terceiros', 'Pendência', 'Concl.'], datasets: [{ data: [sc.NAO_INICIADA, sc.EM_ANDAMENTO, sc.AGUARDANDO_TERCEIROS, sc.PENDENCIA, sc.CONCLUIDA], backgroundColor: ['#94a3b8', '#3b82f6', '#eab308', '#ef4444', '#22c55e'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            if (chartJurisdicao) chartJurisdicao.destroy();
+            chartJurisdicao = new Chart(document.getElementById('jurisdicaoChart').getContext('2d'), { type: 'doughnut', data: { labels: fP !== "TODOS" ? ['Concluídas', 'Pendentes'] : Object.keys(jc), datasets: [{ data: fP !== "TODOS" ? [k.c, k.te - k.c] : Object.values(jc), backgroundColor: fP !== "TODOS" ? ['#22c55e', '#ef4444'] : ['#6366f1', '#14b8a6', '#f43f5e'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+        }
+
+        function criarLinhaEtapaHTML(nome = "", docs = "", resp = "", ini = "", est = "", st = "NAO_INICIADA") {
+            return `
+                <div class="linha-etapa bg-white p-3 rounded shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div class="col-span-12 md:col-span-4"><label class="text-[10px] font-bold text-slate-500 uppercase">Nome</label><input type="text" class="etapa-nome w-full border p-1.5 text-sm rounded outline-none" value="${nome}"></div>
+                    <div class="col-span-12 md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase">Resp.</label><input type="text" class="etapa-resp w-full border p-1.5 text-sm rounded outline-none" value="${resp}"></div>
+                    <div class="col-span-6 md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase">Início</label><input type="date" class="etapa-ini w-full border p-1.5 text-sm rounded outline-none" value="${ini}"></div>
+                    <div class="col-span-6 md:col-span-2"><label class="text-[10px] font-bold text-slate-500 uppercase">Prazo</label><input type="date" class="etapa-est w-full border p-1.5 text-sm rounded outline-none" value="${est}"></div>
+                    <div class="col-span-10 md:col-span-11"><input type="text" class="etapa-docs w-full border border-dashed border-slate-300 bg-slate-50 p-1.5 text-xs rounded outline-none" value="${docs}" placeholder="Docs..."></div>
+                    <div class="col-span-2 md:col-span-1 text-right"><input type="hidden" class="etapa-status" value="${st}"><button onclick="this.parentElement.parentElement.remove()" class="bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded hover:bg-red-200" title="Remover">X</button></div>
+                </div>`;
+        }
+
+        window.verificarTemplate = function () {
+            const tipo = document.getElementById('novo-proj-tipo').value;
+            const container = document.getElementById('container-etapas');
+            if (tipo === "Comercial Completo (Templo/Religioso)") {
+                container.innerHTML = "";
+                templateTemplo.forEach(t => { container.innerHTML += criarLinhaEtapaHTML(t.n, t.d); });
+                window.showToast("Template 14 Etapas Carregado!", "success");
+            } else if (container.innerHTML.trim() === "") {
+                window.adicionarCampoEtapa();
+            }
+        }
+
+        window.adicionarCampoEtapa = function () { document.getElementById('container-etapas').innerHTML += criarLinhaEtapaHTML(); }
+        window.fecharModalProjeto = function () { document.getElementById('modal-novo-projeto').classList.add('hidden'); }
+
+        window.abrirModalProjeto = function () {
+            projetoEditandoId = null;
+            document.getElementById('modal-titulo').innerText = "➕ Novo Projeto";
+            document.getElementById('novo-proj-nome').value = ''; document.getElementById('novo-proj-cnae').value = '';
+            document.getElementById('novo-proj-tipo').value = 'Personalizado'; document.getElementById('container-etapas').innerHTML = criarLinhaEtapaHTML();
+            document.getElementById('modal-novo-projeto').classList.remove('hidden');
+        }
+
+        window.abrirModalEditarProjeto = function (pid) {
+            projetoEditandoId = pid; const p = projetosGlobal.find(x => x.id === pid); if (!p) return;
+            document.getElementById('modal-titulo').innerText = "✏️ Editar Projeto";
+            document.getElementById('novo-proj-nome').value = p.name; document.getElementById('novo-proj-cnae').value = p.cnae || ""; document.getElementById('novo-proj-tipo').value = p.processType || "Outros"; document.getElementById('novo-proj-jurisdicao').value = p.jurisdiction || "Municipal";
+            const c = document.getElementById('container-etapas'); c.innerHTML = '';
+            p.steps.forEach(s => { c.innerHTML += criarLinhaEtapaHTML(s.name, s.docs || "", s.resp || "", s.iniDate || "", s.estDate || "", s.status); });
+            document.getElementById('modal-novo-projeto').classList.remove('hidden');
+        }
+
+        window.salvarProjeto = async function () {
+            const nome = document.getElementById('novo-proj-nome').value.trim(); const cnae = document.getElementById('novo-proj-cnae').value.trim(); const jur = document.getElementById('novo-proj-jurisdicao').value; const tipo = document.getElementById('novo-proj-tipo').value;
+            if (!nome) return alert("O Nome do Empreendimento é obrigatório.");
+
+            let etapas = [];
+            document.querySelectorAll('.linha-etapa').forEach(l => {
+                const n = l.querySelector('.etapa-nome').value.trim();
+                if (n) etapas.push({ name: n, docs: l.querySelector('.etapa-docs').value.trim(), resp: l.querySelector('.etapa-resp').value.trim(), iniDate: l.querySelector('.etapa-ini').value, estDate: l.querySelector('.etapa-est').value, status: l.querySelector('.etapa-status').value });
+            });
+            if (etapas.length === 0) return alert("Adicione pelo menos 1 etapa.");
+
+            try {
+                if (projetoEditandoId) {
+                    await updateDoc(doc(db, "projetos", projetoEditandoId), { name: nome, cnae: cnae, jurisdiction: jur, processType: tipo, steps: etapas });
+                    window.showToast("Projeto atualizado!", "success");
+                } else {
+                    await addDoc(collection(db, "projetos"), { name: nome, cnae: cnae, jurisdiction: jur, processType: tipo, documents: [], chat: [{ sender: "SISTEMA", text: `Criado por ${currentUser}.`, time: new Date().toISOString() }], steps: etapas, createdAt: new Date().toISOString() });
+                    window.showToast("Projeto criado!", "success");
+                }
+                window.fecharModalProjeto();
+            } catch (e) { alert("Erro ao salvar."); }
+        }
+
+        window.excluirProjeto = async function (pid) { if (confirm("🚨 EXCLUSÃO PERMANENTE! Confirma?")) await deleteDoc(doc(db, "projetos", pid)); }
+
+        window.renderizarProjetos = function () {
+            const c = document.getElementById('projetos-container'); c.innerHTML = '';
+            projetosGlobal.forEach(p => {
+                let sH = p.steps.map((s, i) => {
+                    const hoje = new Date().toISOString().split('T')[0];
+                    const at = s.estDate && s.estDate < hoje && s.status !== "CONCLUIDA";
+                    let dataFimInfo = "";
+                    if (s.status === "CONCLUIDA" && s.finalDate) dataFimInfo = `<br><span class="text-emerald-700 font-bold">Fim: ${s.finalDate.split('-').reverse().join('/')}</span>`;
+
+                    return `
+                        <div class="p-3 border-b border-slate-200 ${at ? 'bg-red-50' : 'hover:bg-slate-50'} transition">
+                            <div class="flex flex-col md:flex-row justify-between md:items-center gap-2">
+                                <div class="flex-1">
+                                    <p class="font-bold text-sm ${at ? 'text-red-700' : 'text-slate-800'}">${s.name} <span class="text-[10px] font-normal text-slate-500 ml-2 bg-slate-200 px-1.5 rounded">👤 ${s.resp || 'Não definido'}</span></p>
+                                    <p class="text-[11px] text-slate-500 mt-1">Início: ${s.iniDate ? s.iniDate.split('-').reverse().join('/') : '--'} | Previsto: <span class="${at ? 'text-red-600 font-bold' : ''}">${s.estDate ? s.estDate.split('-').reverse().join('/') : '--'}</span> ${at ? '⚠️' : ''} ${dataFimInfo}</p>
+                                </div>
+                                <div class="w-full md:w-auto">
+                                    <select onchange="window.updateStepStatus('${p.id}', ${i}, this.value, '${s.name}')" class="w-full md:w-auto border border-slate-300 p-1.5 rounded text-xs bg-white font-semibold outline-none">
+                                        <option value="NAO_INICIADA" ${s.status === 'NAO_INICIADA' ? 'selected' : ''}>Não Iniciada</option>
+                                        <option value="EM_ANDAMENTO" ${s.status === 'EM_ANDAMENTO' ? 'selected' : ''}>Em Andamento</option>
+                                        <option value="AGUARDANDO_TERCEIROS" ${s.status === 'AGUARDANDO_TERCEIROS' ? 'selected' : ''}>Terceiros</option>
+                                        <option value="PENDENCIA" ${s.status === 'PENDENCIA' ? 'selected' : ''}>Pendência</option>
+                                        <option value="CONCLUIDA" ${s.status === 'CONCLUIDA' ? 'selected' : ''}>✅ Concluída</option>
+                                    </select>
+                                </div>
+                            </div>
+                            ${s.docs ? `<div class="mt-2 text-[10px] bg-white border border-slate-200 p-1.5 rounded text-slate-500">📎 <b>Docs:</b> ${s.docs}</div>` : ''}
+                        </div>`;
+                }).join('');
+
+                let cH = (p.chat || []).map(m => `<div class="mb-3 ${m.sender === currentUser ? 'text-right' : 'text-left'}"><span class="text-[10px] text-slate-400 font-bold block mb-0.5">${m.sender}</span><span class="inline-block p-2 rounded-lg text-sm shadow-sm ${m.sender === currentUser ? 'bg-blue-100 text-blue-900 rounded-tr-none' : 'bg-white border text-slate-800 rounded-tl-none'}">${m.text}</span></div>`).join('');
+                let dH = (p.documents || []).map(d => `<div class="text-sm border p-2 rounded mb-1 flex items-center">📄 <a href="${d.dataBase64}" download="${d.fileName}" class="text-blue-600 truncate flex-1 hover:underline text-xs" title="${d.fileName}">${d.fileName}</a></div>`).join('');
+
+                c.innerHTML += `
+                    <div class="bg-white rounded-lg shadow-md border border-slate-200 flex flex-col lg:flex-row overflow-hidden">
+                        <div class="flex-1 p-5 border-b lg:border-b-0 lg:border-r border-slate-200">
+                            <div class="flex justify-between items-start mb-2"><h2 class="text-xl font-black text-slate-800">${p.name}</h2><div class="flex gap-2"><button onclick="window.abrirModalEditarProjeto('${p.id}')" class="text-blue-600 bg-blue-50 px-3 py-1 rounded text-sm font-bold">✏️ Editar</button> <button onclick="window.excluirProjeto('${p.id}')" class="text-red-600 bg-red-50 px-3 py-1 rounded text-sm font-bold">🗑️ Excluir</button></div></div>
+                            <div class="mb-4 flex flex-wrap gap-2"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded border text-xs font-semibold">CNAE: ${p.cnae || 'N/A'}</span> <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded border text-xs font-semibold">🏛️ ${p.jurisdiction}</span> <span class="bg-amber-100 text-amber-800 px-2 py-1 rounded border text-xs font-bold">📋 ${p.processType || "Outros"}</span></div>
+                            <div class="border border-slate-200 rounded bg-slate-50 shadow-inner max-h-[400px] overflow-y-auto mb-4">${sH}</div>
+                            <div class="border-t border-slate-100 pt-3"><h3 class="font-bold text-sm text-slate-700 mb-2 flex justify-between items-center">📎 Documentos Anexados <label class="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer hover:bg-slate-700 transition">+ Anexar (Máx 500kb)<input type="file" class="hidden" accept=".pdf,image/*" onchange="window.uploadDocument(event, '${p.id}')"></label></h3><div class="max-h-32 overflow-y-auto p-1">${dH || '<p class="text-xs text-slate-400 italic">Nenhum anexo.</p>'}</div></div>
+                        </div>
+                        <div class="w-full lg:w-96 flex flex-col bg-slate-100"><div class="p-3 font-bold border-b text-sm bg-slate-50">💬 Interações e Histórico</div><div class="flex-1 p-4 overflow-y-auto" id="chat-box-${p.id}">${cH}</div><div class="p-3 border-t bg-white flex gap-2"><input type="text" id="chat-input-${p.id}" class="flex-1 border p-2 rounded text-sm outline-none" placeholder="Comente..." onkeypress="if(event.key === 'Enter') window.sendChat('${p.id}')"><button onclick="window.sendChat('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded">✉️</button></div></div>
+                    </div>`;
+            });
+        }
+
+        window.updateStepStatus = async function (pid, idx, st, name) {
+            const p = projetosGlobal.find(x => x.id === pid); const s = [...p.steps]; const old = s[idx].status; s[idx].status = st;
+            if (st === "CONCLUIDA") s[idx].finalDate = new Date().toISOString().split('T')[0];
+            else s[idx].finalDate = null;
+            await updateDoc(doc(db, "projetos", pid), { steps: s, chat: arrayUnion({ sender: "SISTEMA", text: `[${currentUser}] alterou "${name}" para ${st}.`, time: new Date().toISOString() }) });
+        }
+
+        window.sendChat = async function (pid) { const inp = document.getElementById(`chat-input-${pid}`); if (!inp.value.trim()) return; await updateDoc(doc(db, "projetos", pid), { chat: arrayUnion({ sender: currentUser, text: inp.value.trim(), time: new Date().toISOString() }) }); inp.value = ""; }
+
+        // FUNÇÃO DE UPLOAD 100% GRATUITA (SALVA NO BANCO DE TEXTO VIA BASE64 COM LIMITE DE SEGURANÇA DE 500KB)
+        window.uploadDocument = function (e, pid) {
+            const f = e.target.files[0];
+            if (!f) return;
+            if (f.size > 500 * 1024) return alert("🚨 ARQUIVO MUITO GRANDE!\nPara manter o sistema 100% gratuito e não travar o banco, anexe apenas PDFs ou Imagens de até 500kb.\n\nDica: Comprima seus PDFs antes de enviar.");
+
+            const r = new FileReader();
+            r.readAsDataURL(f);
+            r.onload = async () => {
+                window.showToast("Salvando anexo...", "success");
+                await updateDoc(doc(db, "projetos", pid), {
+                    documents: arrayUnion({ fileName: f.name, dataBase64: r.result }),
+                    chat: arrayUnion({ sender: "SISTEMA", text: `[${currentUser}] anexou: ${f.name}.`, time: new Date().toISOString() })
+                });
+                window.showToast("Anexado com sucesso!", "success");
+            }
+        }
+
+        window.showToast = function (msg, t = "error") { const a = document.getElementById('notification-area'); const d = document.createElement('div'); d.className = `${t === "error" ? "bg-red-600" : "bg-emerald-600"} text-white p-4 rounded shadow-lg text-sm flex justify-between pointer-events-auto`; d.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="ml-4 font-black hover:text-slate-200">&times;</button>`; a.appendChild(d); setTimeout(() => { if (d.parentElement) d.remove(); }, 5000); }
+    </script>
+</body>
+</html>
