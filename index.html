@@ -220,6 +220,52 @@
             { n: "13. Habite-se (Prefeitura)", d: "Alvará, AVCB, Vistoria Final, Quitação de Taxas Municipais." },
             { n: "14. Averbação no Cartório", d: "Habite-se, Alvará, Plantas Finais, Certidão Numeração, Matrícula, Requerimento." }
         ];
+        const templateAVCB_CLCB = [
+            { n: "1. Levantamento da Licença Atual", d: "AVCB/CLCB vigente, validade, planta aprovada." },
+            { n: "2. Inspeção Técnica da Edificação", d: "Extintores, hidrantes, iluminação emergência." },
+            { n: "3. Verificação das Rotas de Fuga", d: "Saídas, sinalização, portas corta-fogo." },
+            { n: "4. Atualização de ART/RRT", d: "Responsável técnico." },
+            { n: "5. Atualização de Laudos", d: "SPDA, aterramento, pressurização, alarmes." },
+            { n: "6. Correção de Não Conformidades", d: "Adequações exigidas." },
+            { n: "7. Protocolo Via Fácil Bombeiros", d: "Upload da documentação." },
+            { n: "8. Pagamento de Taxas", d: "DARE ou taxas estaduais." },
+            { n: "9. Agendamento da Vistoria", d: "Corpo de Bombeiros." },
+            { n: "10. Vistoria Oficial", d: "Inspeção presencial." },
+            { n: "11. Atendimento de Exigências", d: "Pendências apontadas." },
+            { n: "12. Emissão do AVCB/CLCB", d: "Licença renovada." }
+        ];
+
+        const templateAlvara = [
+        {n:"1. Verificação da Validade Atual",d:"Alvará vigente."},
+        {n:"2. Conferência CNPJ e CNAE",d:"Consulta cadastral."},
+        {n:"3. Consulta de Uso do Solo",d:"Compatibilidade da atividade."},
+        {n:"4. Regularidade do Imóvel",d:"Habite-se e inscrição imobiliária."},
+        {n:"5. Regularidade AVCB/CLCB",d:"Licença dos Bombeiros."},
+        {n:"6. Licenças Complementares",d:"Sanitária, Ambiental, CETESB."},
+        {n:"7. Atualização Contrato Social",d:"Alterações societárias."},
+        {n:"8. Emissão de Certidões",d:"Municipais quando exigidas."},
+        {n:"9. Protocolo de Renovação",d:"Portal municipal."},
+        {n:"10. Pagamento da Taxa",d:"DAE/Taxa Municipal."},
+        {n:"11. Vistoria Municipal",d:"Quando exigida."},
+        {n:"12. Emissão do Alvará Renovado",d:"Documento final."}
+        ];
+
+        const templateHabiteSe = [
+        {n:"1. Conclusão da Obra",d:"Execução finalizada."},
+        {n:"2. Conferência Projeto Aprovado",d:"Compatibilidade projeto x obra."},
+        {n:"3. Atualização ART/RRT",d:"Responsáveis técnicos."},
+        {n:"4. Documentação As Built",d:"Plantas finais."},
+        {n:"5. Laudos Técnicos",d:"Estrutural, instalações e acessibilidade."},
+        {n:"6. Certificado AVCB",d:"Quando exigido."},
+        {n:"7. Cadastro Municipal",d:"Atualização fiscal."},
+        {n:"8. Quitação de ISS da Obra",d:"Encerramento fiscal."},
+        {n:"9. Solicitação do Habite-se",d:"Protocolo prefeitura."},
+        {n:"10. Vistoria Municipal",d:"Fiscalização da obra."},
+        {n:"11. Atendimento de Exigências",d:"Correções da vistoria."},
+        {n:"12. Emissão do Habite-se",d:"Liberação para ocupação."},
+        {n:"13. Averbação em Cartório",d:"Regularização da matrícula."},
+        {n:"14. Encerramento do Processo",d:"Arquivo definitivo."}
+        ];
 
         window.loginAuth = async function () {
             const e = document.getElementById('email-input').value; const p = document.getElementById('password-input').value;
