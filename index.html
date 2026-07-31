@@ -93,9 +93,9 @@
                         <select id="novo-proj-tipo" onchange="window.verificarTemplate()" class="w-full border border-slate-300 p-2 rounded outline-none bg-white focus:ring-2 focus:ring-blue-500">
                             <option value="Personalizado">Personalizado (Em branco)</option>
                             <option value="Comercial Completo (Templo/Religioso)">Comercial Completo (Templo/Religioso) - 14 Etapas</option>
-                            <option value="Renovação Bombeiro (Avcb/Clcb)">Renovação Bombeiro (Avcb/Clcb) - 12 Etapas</option>
-                            <option value="Renovação Licença (Alvará/Funcionamento)">Renovação Licença (Alvará/Funcionamento)- 12 Etapas</option>
-                            <option value="Solicitação Habite-se (Habite-se)">Solicitação Habite-se (Habite-se) - 14 Etapas</option>
+                            <option value="AVCB / CLCB">AVCB / CLCB (Renovação) - 12 Etapas</option>
+                            <option value="Alvará de Funcionamento">Alvará de Funcionamento (Renovação) - 12 Etapas</option>
+                            <option value="Habite-se">Habite-se - 14 Etapas</option>
                         </select>
                     </div>
                     <div>
@@ -345,16 +345,45 @@
         }
 
         window.verificarTemplate = function () {
-            const tipo = document.getElementById('novo-proj-tipo').value;
-            const container = document.getElementById('container-etapas');
-            if (tipo === "Comercial Completo (Templo/Religioso)") {
-                container.innerHTML = "";
-                templateTemplo.forEach(t => { container.innerHTML += criarLinhaEtapaHTML(t.n, t.d); });
-                window.showToast("Template 14 Etapas Carregado!", "success");
-            } else if (container.innerHTML.trim() === "") {
-                window.adicionarCampoEtapa();
-            }
-        }
+          const tipo = document.getElementById('novo-proj-tipo').value;
+          const container = document.getElementById('container-etapas');
+          container.innerHTML = "";
+          let template = null;
+          switch (tipo) {
+        
+             case "Comercial Completo (Templo/Religioso)":
+                template = templateTemplo;
+                break;
+        
+            case "AVCB / CLCB":
+               template = templateAVCB;
+               break;
+        
+            case "Alvará de Funcionamento":
+               template = templateAlvara;
+               break;
+        
+           case "Habite-se":
+              template = templateHabiteSe;
+              break;
+}
+    if (template) {
+        template.forEach(t => {
+            container.innerHTML += criarLinhaEtapaHTML(
+                t.n,
+                t.d
+            );
+        });
+ 
+        window.showToast(
+                 `${template.length} etapas carregadas com sucesso!`,
+                 "success"
+        );
+    } else {
+        container.innerHTML =
+            criarLinhaEtapaHTML();
+    }
+}
 
         window.adicionarCampoEtapa = function () { document.getElementById('container-etapas').innerHTML += criarLinhaEtapaHTML(); }
         window.fecharModalProjeto = function () { document.getElementById('modal-novo-projeto').classList.add('hidden'); }
